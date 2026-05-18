@@ -1,0 +1,68 @@
+name: Auto Build Release (Self-hosted)
+
+on:
+  schedule:
+    - cron: '0 16 * * *'
+  workflow_dispatch:
+
+env:
+  UPSTREAM_OWNER: "prometheus"  # 上游开发者/组织名
+  UPSTREAM_REPO: "prometheus"   # 上游仓库名
+
+jobs:
+  check-version:
+    if: github.repository_owner == 'loongarch64-releases'
+    runs-on: self-hosted
+    outputs:
+      version: ${{ steps.check.outputs.VERSION }}
+      should_build: ${{ steps.check.outputs.SHOULD_BUILD }}
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # gh 命令需要这个环境变量
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check version and release status
+        id: check
+        run: |
+          # 1. 获取上游最新版本
+          LATEST_VERSION=$(curl -s "https://api.github.com/repos/${{ env.UPSTREAM_OWNER }}/${{ env.UPSTREAM_REPO }}/releases/latest" | jq -r ".tag_name")
+          LATEST_VERSION=${LATEST_VERSION#*v}
+          echo "Latest upstream runc version: $LATEST_VERSION"
+
+          # 2. 使用 gh 检查本仓库是否存在该 Release
+          # --repo 指定仓库，2>/dev/null 忽略报错日志
+          if gh release view "$LATEST_VERSION" --repo ${{ github.repository }} >/dev/null 2>&1; then
+            echo "Release $LATEST_VERSION already exists. Skipping."
+            echo "SHOULD_BUILD=false" >> $GITHUB_OUTPUT
+          else
+            echo "Release $LATEST_VERSION not found. Need to build."
+            echo "VERSION=$LATEST_VERSION" >> $GITHUB_OUTPUT
+            echo "SHOULD_BUILD=true" >> $GITHUB_OUTPUT
+          fi
+
+  release:
+    needs: check-version
+    if: needs.check-version.outputs.should_build == 'true'
+    runs-on: self-hosted
+    permissions:
+      contents: write 
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: |
+          chmod +x ./build_on_host.sh
+          ./build_on_host.sh
+
+      - name: Upload
+        # 使用 gh release create 更加统一
+        run: |
+          VERSION=${{ needs.check-version.outputs.version }}
+          gh release create ${{ needs.check-version.outputs.version }} \
+            --title "Release ${{ needs.check-version.outputs.version }}" \
+            --notes "Automated build for version ${{ needs.check-version.outputs.version }} based on ${{ env.UPSTREAM_OWNER }}/${{ env.UPSTREAM_REPO }}" \
+            dists/${UPSTREAM_REPO}-$VERSION/*
+

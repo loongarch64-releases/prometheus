@@ -1,0 +1,25 @@
+From 41a5de03893e7461b8da2341458777f96d1671df Mon Sep 17 00:00:00 2001
+From: qiangxuhui <qiangxuhui@loongson.cn>
+Date: Thu, 14 May 2026 01:56:36 +0000
+Subject: [PATCH] add loong64 support
+
+---
+ Makefile.common | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Makefile.common b/Makefile.common
+index ef05881..a8417d1 100644
+--- a/Makefile.common
++++ b/Makefile.common
+@@ -56,7 +56,7 @@ endif
+ endif
+ 
+ PROMU_VERSION ?= 0.18.1
+-PROMU_URL     := https://github.com/prometheus/promu/releases/download/v$(PROMU_VERSION)/promu-$(PROMU_VERSION).$(GO_BUILD_PLATFORM).tar.gz
++PROMU_URL     := https://github.com/loongarch64-releases/promu/releases/download/$(PROMU_VERSION)/promu-$(PROMU_VERSION).$(GO_BUILD_PLATFORM).tar.gz
+ 
+ SKIP_GOLANGCI_LINT :=
+ GOLANGCI_LINT :=
+-- 
+2.52.0
+
