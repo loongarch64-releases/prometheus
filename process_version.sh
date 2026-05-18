@@ -38,9 +38,9 @@ fetch_source_code()
 
 build(){
     pushd "${build_root}"
-        # apply_patches
+        local promu_bin=~/go/bin/promu
         sed -i 's:prometheus/promu/releases/download/v:loongarch64-releases/promu/releases/download/:g' Makefile.common
-        make build PROMU_VERSION=0.18.1 && /root/go/bin/promu tarball
+        make build PROMU_VERSION=0.18.1 && $promu_bin tarball
     popd
 }
 
