@@ -8,8 +8,9 @@ RUN apt update && apt install -y git \
     build-essential \
     curl \
     nodejs \
-    npm && \
-    npm install -g pnpm
+    npm
+
+RUN npm install -g pnpm@11.27.1
 
 ENV PROMETHEUS_VERSION=''
 
